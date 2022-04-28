@@ -1,0 +1,68 @@
+-
+  name: Installing wordpress using ansible
+  hosts: ubuntu
+  become: true
+  tasks:
+      - name: Update packagemanager
+        shell: apt update -y
+      - name: Install apache2
+        apt: name=apache2 state=present    
+      - name: Install php
+        apt: name=php state=present
+      - name: python
+        apt: name=python state=present
+      - name: Install apache2-php5
+        apt: name=libapache2-mod-php state=present
+      - name: Install php-gd
+        apt: name=php-gd state=present
+      - name: Install php-mysql
+        apt: name=php-mysql state=present
+      - name: Install php-mbstring
+        apt: name=php-mbstring state=present
+      - name: Install php-xmlrpc
+        apt: name=php-xmlrpc state=present
+      - name: Install php-xml
+        apt: name=php-xml state=present
+      - name: Install php zip
+        apt: name=php-zip state=present
+      - name: Install unzip
+        apt: name=unzip state=present
+      - name: Install php-curl
+        apt: name=php-curl state=present
+      - name: Execute the command in remote shell; stdout goes to the specified file on the remote
+        shell: rm -f index.html
+      - name: delete file
+        ignore_errors: yes
+        file:
+          state: absent
+          path: /var/www/html/index.html
+      - name: Download and Extract WorPress
+        unarchive:
+          src: https://wordpress.org/latest.tar.gz
+          dest: /var/www/
+          remote_src: yes
+      - name: move contents of wordpress to the /var/www/html directory
+        shell: mv /var/www/wordpress/* /var/www/html/
+      - name: rewriting
+        command: a2enmod rewrite
+      - name: changing ownership on html directory
+        command: chown -R www-data:www-data /var/www/html
+      - name: setting correct permissions for wordpress files
+        command: find /var/www/html -type d -exec chmod g+s {} \;
+        command: chmod g+w /var/www/html/wp-content
+        command: chmod -R g+w /var/www/html/wp-content/themes
+        command: chmod -R g+w /var/www/html/wp-content/plugins
+        command: cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/domain.com.conf
+      - name: Inserting a line after a pattern in Ansible example
+        lineinfile:
+          path: /etc/apache2/sites-available/domain.com.conf
+          line: ServerName domain.com
+          line: ServerAlias www.domain.com
+          insertafter: DocumentRoot /var/www/html
+      - name: Enabling wordpress configuration file and disabling default conf file
+        command: a2ensite domain.com.conf
+        command: a2dissite 000-default.conf
+      - name: Restart Apache
+        service:
+          name: apache2
+          state: restarted
